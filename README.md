@@ -33,7 +33,7 @@ Un bot Telegram pour gérer des tontines (associations d'épargne et de crédit 
 
 -   APP_ENV=production
 -   APP_KEY=base64:votre-clé-générée
--   APP_URL=https://api.bantchi.mougni.com
+-   APP_URL=
 
 -   DB_CONNECTION=sqlite
 -   DB_DATABASE=/chemin/absolu/vers/database.sqlite
