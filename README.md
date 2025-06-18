@@ -1,5 +1,8 @@
 # DJODJOUMA
 
+<p align="center"><a href="https://t.me/bossigo_bot" target="_blank"><img src="https://bantchi.mougni.com/logo/djodjouma.jpg" width="150" alt="djodjouma Logo"></a></p>
+
+
 Un bot Telegram pour gérer des tontines (associations d'épargne et de crédit rotatives) avec des paiements via le réseau Lightning de Bitcoin à l'aide de BTCPay Server. Les utilisateurs peuvent créer, rejoindre, payer, vérifier les soldes et retirer des fonds des tontines via une interface basée sur des boutons. Le bot affiche les montants en FCFA (XOF), avec des valeurs stockées en satoshis, et utilise un taux de change statique.
 
 ## Fonctionnalités
