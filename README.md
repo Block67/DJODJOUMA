@@ -26,8 +26,8 @@ Un bot Telegram pour gérer des tontines (associations d'épargne et de crédit 
 
 ## Installation
 
--   **Installer les dépendances** : composer install
--   **Copier le fichier d'environnement** : cp .env.example .env
+-   composer install
+-   cp .env.example .env
 
 ## Modifier .env avec vos paramètres
 
