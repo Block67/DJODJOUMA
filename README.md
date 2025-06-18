@@ -39,7 +39,7 @@ Un bot Telegram pour gérer des tontines (associations d'épargne et de crédit 
 -   DB_DATABASE=/chemin/absolu/vers/database.sqlite
 
 -   TONTINE_TELEGRAM_BOT_TOKEN=votre-token-telegram
--   TONTINE_TELEGRAM_WEBHOOK_URL=https://api.bantchi.mougni.com/api/telegram/webhook
+-   TONTINE_TELEGRAM_WEBHOOK_URL=votre-webhook-url
 -   TONTINE_BTCPAY_SERVER_URL=https://votre-serveur-btcpay
 -   TONTINE_BTCPAY_API_KEY=votre-clé-api-btcpay
 -   TONTINE_BTCPAY_STORE_ID=votre-id-magasin-btcpay
