@@ -668,7 +668,7 @@ class DjodjoumaBotService
                 'first_name' => $chatData['first_name'] ?? null,
                 'last_name' => $chatData['last_name'] ?? null,
                 'username' => $chatData['username'] ?? 'User_' . $chatId,
-                'language_code' => $chatData['language_code'] ?? 'fr', // Changed default to 'fr'
+                'language_code' => $chatData['language_code'] ?? 'fr',
             ]
         );
     }

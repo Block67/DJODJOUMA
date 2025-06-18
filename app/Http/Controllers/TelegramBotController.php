@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\DjodjoumaBotService;
-use Illuminate\Support\Facades\Log; // Added import
+use Illuminate\Support\Facades\Log;
 
 class TelegramBotController extends Controller
 {
@@ -52,7 +52,7 @@ class TelegramBotController extends Controller
 
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
-            Log::error('Telegram webhook error: ' . $e->getMessage()); // Changed to Log
+            Log::error('Telegram webhook error: ' . $e->getMessage());
             return response()->json(['status' => 'error'], 500);
         }
     }
@@ -77,7 +77,7 @@ class TelegramBotController extends Controller
             $this->botService->handleBtcpayWebhook($invoiceId, $status);
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
-            Log::error('BTCPay webhook error: ' . $e->getMessage()); // Changed to Log
+            Log::error('BTCPay webhook error: ' . $e->getMessage());
             return response()->json(['status' => 'error'], 500);
         }
     }
