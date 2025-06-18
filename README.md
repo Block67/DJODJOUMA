@@ -31,19 +31,19 @@ Un bot Telegram pour gérer des tontines (associations d'épargne et de crédit 
 
 ## Modifier .env avec vos paramètres
 
-APP_ENV=production
-APP_KEY=base64:votre-clé-générée
-APP_URL=https://api.bantchi.mougni.com
+-   APP_ENV=production
+-   APP_KEY=base64:votre-clé-générée
+-   APP_URL=https://api.bantchi.mougni.com
 
-DB_CONNECTION=sqlite
-DB_DATABASE=/chemin/absolu/vers/database.sqlite
+-   DB_CONNECTION=sqlite
+-   DB_DATABASE=/chemin/absolu/vers/database.sqlite
 
-TONTINE_TELEGRAM_BOT_TOKEN=votre-token-telegram
-TONTINE_TELEGRAM_WEBHOOK_URL=https://api.bantchi.mougni.com/api/telegram/webhook
-TONTINE_BTCPAY_SERVER_URL=https://votre-serveur-btcpay
-TONTINE_BTCPAY_API_KEY=votre-clé-api-btcpay
-TONTINE_BTCPAY_STORE_ID=votre-id-magasin-btcpay
-TONTINE_EXCHANGE_DEFAULT_RATE=0.0000018
+-   TONTINE_TELEGRAM_BOT_TOKEN=votre-token-telegram
+-   TONTINE_TELEGRAM_WEBHOOK_URL=https://api.bantchi.mougni.com/api/telegram/webhook
+-   TONTINE_BTCPAY_SERVER_URL=https://votre-serveur-btcpay
+-   TONTINE_BTCPAY_API_KEY=votre-clé-api-btcpay
+-   TONTINE_BTCPAY_STORE_ID=votre-id-magasin-btcpay
+-   TONTINE_EXCHANGE_DEFAULT_RATE=0.0000018
 
 ## Utilisation
 
