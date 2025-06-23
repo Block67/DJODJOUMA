@@ -661,10 +661,21 @@ class DjodjoumaBotService
                 'paid_at' => Carbon::now(),
             ]);
 
+            // Notifier le membre qui a payé
             $this->telegram->sendMessage([
                 'chat_id' => $payment->user->telegram_id,
                 'text' => "Paiement de {$payment->amount_fcfa} FCFA confirmé pour la tontine '{$payment->tontine->name}'.",
             ]);
+
+            // Notifier le créateur de la tontine
+            $tontine = $payment->tontine;
+            $creator = User::find($tontine->creator_id);
+            if ($creator && $creator->telegram_id !== $payment->user->telegram_id) {
+                $this->telegram->sendMessage([
+                    'chat_id' => $creator->telegram_id,
+                    'text' => "Le membre @{$payment->user->username} a payé {$payment->amount_fcfa} FCFA pour la tontine '{$tontine->name}' (Tour {$payment->round}).",
+                ]);
+            }
         } elseif ($status === 'Expired') {
             $payment->update(['status' => 'expired']);
         }
