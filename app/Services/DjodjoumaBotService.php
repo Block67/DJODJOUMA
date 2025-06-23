@@ -338,10 +338,20 @@ class DjodjoumaBotService
 
         $tontine->increment('current_members');
 
+        // Notifier le créateur de la tontine
+        $creator = User::find($tontine->creator_id);
+        if ($creator && $creator->telegram_id !== $user->telegram_id) {
+            $this->telegram->sendMessage([
+                'chat_id' => $creator->telegram_id,
+                'text' => "Un nouveau membre, @{$user->username}, a rejoint votre tontine '{$tontine->name}' ! Position : $position",
+            ]);
+        }
+
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => "Vous avez rejoint la tontine '{$tontine->name}' ! Position : $position",
         ]);
+
         $this->showMainMenu($chatId, $user->telegram_id);
     }
 
