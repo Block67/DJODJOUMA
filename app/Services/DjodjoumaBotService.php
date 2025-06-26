@@ -621,23 +621,33 @@ class DjodjoumaBotService
         $response = Http::get('https://api.yadio.io/rate/XOF/BTC');
 
         if ($response->successful()) {
-            return $response->json()['rate'];
+            return (float) $response->json()['rate'];
         }
 
-        return config('tontine.exchange.default_rate', 60000000);
+        // Valeur par défaut si l'API échoue
+        return (float) config('tontine.exchange.default_rate', 60000000);
     }
 
     protected function convertFcfaToSats(int $amountFcfa): int
     {
         $rate = $this->getCurrentBtcRate();
-        return (int) ($amountFcfa / $rate * 100_000_000);
+
+        // Calcule les satoshis en entier sans virgule, arrondi à l'excès (vers le haut)
+        $sats = ($amountFcfa / $rate) * 100_000_000;
+
+        return intval(ceil($sats)); // arrondi vers le haut
     }
 
-    protected function convertSatsToFcfa(int $amountSats): float
+    protected function convertSatsToFcfa(int $amountSats): int
     {
         $rate = $this->getCurrentBtcRate();
-        return round($amountSats * $rate / 100_000_000, 2);
+
+        // Convertit les sats en FCFA sans virgule, arrondi classique
+        $fcfa = ($amountSats * $rate) / 100_000_000;
+
+        return intval(round($fcfa)); // arrondi classique à l'entier le plus proche
     }
+
 
     protected function calculateNextDistribution(Carbon $currentDate, string $frequency): Carbon
     {
