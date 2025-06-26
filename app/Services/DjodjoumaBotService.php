@@ -624,7 +624,6 @@ class DjodjoumaBotService
             return (float) $response->json()['rate'];
         }
 
-        // Valeur par défaut si l'API échoue
         return (float) config('tontine.exchange.default_rate', 60000000);
     }
 
@@ -632,20 +631,18 @@ class DjodjoumaBotService
     {
         $rate = $this->getCurrentBtcRate();
 
-        // Calcule les satoshis en entier sans virgule, arrondi à l'excès (vers le haut)
         $sats = ($amountFcfa / $rate) * 100_000_000;
 
-        return intval(ceil($sats)); // arrondi vers le haut
+        return intval(ceil($sats));
     }
 
     protected function convertSatsToFcfa(int $amountSats): int
     {
         $rate = $this->getCurrentBtcRate();
 
-        // Convertit les sats en FCFA sans virgule, arrondi classique
         $fcfa = ($amountSats * $rate) / 100_000_000;
 
-        return intval(round($fcfa)); // arrondi classique à l'entier le plus proche
+        return intval(round($fcfa));
     }
 
 
