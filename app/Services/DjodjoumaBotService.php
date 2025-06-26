@@ -621,11 +621,10 @@ class DjodjoumaBotService
         $response = Http::get('https://api.yadio.io/rate/XOF/BTC');
 
         if ($response->successful()) {
-            return $response->json()['rate']; // Exemple : 59914276.810197
+            return $response->json()['rate'];
         }
 
-        // En cas d’échec, tu peux fallback sur une valeur par défaut
-        return config('tontine.exchange.default_rate', 60000000); // fallback
+        return config('tontine.exchange.default_rate', 60000000);
     }
 
     protected function convertFcfaToSats(int $amountFcfa): int
