@@ -2,18 +2,19 @@
 
 namespace App\Services;
 
-use Telegram\Bot\Api;
+use Carbon\Carbon;
 use App\Models\User;
+use Telegram\Bot\Api;
+use GuzzleHttp\Client;
 use App\Models\Tontine;
+use Illuminate\Support\Str;
+use App\Models\Conversation;
 use App\Models\TontineMember;
 use App\Models\TontinePayment;
 use App\Models\TontineWithdrawal;
-use App\Models\Conversation;
-use GuzzleHttp\Client;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DjodjoumaBotService
 {
@@ -614,16 +615,29 @@ class DjodjoumaBotService
         }
     }
 
+
+    protected function getCurrentBtcRate(): float
+    {
+        $response = Http::get('https://api.yadio.io/rate/XOF/BTC');
+
+        if ($response->successful()) {
+            return $response->json()['rate']; // Exemple : 59914276.810197
+        }
+
+        // En cas d’échec, tu peux fallback sur une valeur par défaut
+        return config('tontine.exchange.default_rate', 60000000); // fallback
+    }
+
     protected function convertFcfaToSats(int $amountFcfa): int
     {
-        $rate = config('tontine.exchange.default_rate');
-        return (int) ($amountFcfa / $rate * 100000000);
+        $rate = $this->getCurrentBtcRate();
+        return (int) ($amountFcfa / $rate * 100_000_000);
     }
 
     protected function convertSatsToFcfa(int $amountSats): float
     {
-        $rate = config('tontine.exchange.default_rate');
-        return round($amountSats * $rate / 100000000, 2);
+        $rate = $this->getCurrentBtcRate();
+        return round($amountSats * $rate / 100_000_000, 2);
     }
 
     protected function calculateNextDistribution(Carbon $currentDate, string $frequency): Carbon
