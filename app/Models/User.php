@@ -16,7 +16,7 @@ class User extends Model
 
     public function tontines()
     {
-        return $this->belongsToMany(Tontine::class, 'tontine_members')
+        return $this->belongsToMany(Tontine::class, 'tontines_members')
                     ->withPivot('position', 'has_received', 'joined_at')
                     ->withTimestamps();
     }

@@ -414,6 +414,8 @@ class DjodjoumaBotService
             return;
         }
 
+        $bolt11 = $invoice['bolt11'] ?? 'ln_invoice';
+
         TontinePayment::create([
             'tontine_id' => $tontine->id,
             'user_id' => $user->id,
@@ -421,17 +423,24 @@ class DjodjoumaBotService
             'payment_hash' => $invoice['payment_hash'] ?? null,
             'amount_fcfa' => $tontine->amount_fcfa,
             'amount_sats' => $tontine->amount_sats,
-            'bolt11_invoice' => $invoice['bolt11'],
+            'bolt11_invoice' => $bolt11,
             'expires_at' => Carbon::now()->addMinutes(30),
             'round' => $tontine->current_round,
         ]);
 
-        $qrCode = QrCode::size(200)->generate($invoice['bolt11']);
-        $this->telegram->sendPhoto([
-            'chat_id' => $chatId,
-            'photo' => $qrCode,
-            'caption' => "Payez {$tontine->amount_fcfa} FCFA ({$tontine->amount_sats} sats) pour la tontine '{$tontine->name}'.\nFacture : {$invoice['checkoutLink']}",
-        ]);
+        if ($bolt11 === 'ln_invoice') {
+            $this->telegram->sendMessage([
+                'chat_id' => $chatId,
+                'text' => "Veuillez utiliser le lien de paiement : {$invoice['checkoutLink']}",
+            ]);
+        } else {
+            $qrCode = QrCode::size(200)->generate($bolt11);
+            $this->telegram->sendPhoto([
+                'chat_id' => $chatId,
+                'photo' => $qrCode,
+                'caption' => "Payez {$tontine->amount_fcfa} FCFA ({$tontine->amount_sats} sats) pour la tontine '{$tontine->name}'.\nFacture : {$invoice['checkoutLink']}",
+            ]);
+        }
 
         $this->showMainMenu($chatId, $user->telegram_id);
     }
@@ -579,41 +588,102 @@ class DjodjoumaBotService
         $this->showMainMenu($chatId, $user->telegram_id);
     }
 
+
     protected function createBtcpayInvoice(int $amountSats, int $tontineId, int $userId): array
     {
         try {
+            $tontine = Tontine::find($tontineId);
+            if (!$tontine || $tontine->amount_sats !== $amountSats) {
+                Log::error('Échec de la création de la facture BTCPay : tontine invalide ou montant incorrect', [
+                    'tontine_id' => $tontineId,
+                    'provided_amount_sats' => $amountSats,
+                    'tontine_amount_sats' => $tontine ? $tontine->amount_sats : null,
+                ]);
+                return [];
+            }
+
             $storeId = config('tontine.btcpay.store_id');
-            $response = $this->httpClient->post("/api/v1/stores/{$storeId}/invoices", [
-                'headers' => [
-                    'Authorization' => 'token ' . config('tontine.btcpay.api_key'),
-                    'Content-Type' => 'application/json',
+            $apiKey = config('tontine.btcpay.api_key');
+            $serverUrl = config('tontine.btcpay.server_url');
+
+            $amountBtc = bcdiv($amountSats, 100_000_000, 8);
+
+            $paymentRequestData = [
+                'amount' => $amountBtc,
+                'title' => 'Paiement Tontine',
+                'currency' => 'BTC',
+                'email' => "user_{$userId}@example.com",
+                'description' => "Participation à la tontine '{$tontine->name}'",
+                'checkout' => [
+                    'paymentMethods' => ['BTC-LightningNetwork'],
                 ],
-                'json' => [
-                    'amount' => $amountSats / 100000000,
-                    'currency' => 'SATS',
-                    'metadata' => [
-                        'tontine_id' => $tontineId,
-                        'user_id' => $userId,
-                    ],
-                    'checkout' => [
-                        'expirationMinutes' => 30,
-                        'paymentMethods' => ['BTC-LightningNetwork'],
-                    ],
-                ],
+            ];
+
+            $createResponse = Http::withHeaders([
+                'Authorization' => 'token ' . $apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post("{$serverUrl}/stores/{$storeId}/payment-requests", $paymentRequestData);
+
+            if (!$createResponse->successful()) {
+                Log::error('Échec de la création de la demande de paiement BTCPay', ['response' => $createResponse->json()]);
+                return [];
+            }
+
+            $paymentRequestId = $createResponse->json()['id'];
+
+            $confirmResponse = Http::withHeaders([
+                'Authorization' => 'token ' . $apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post("{$serverUrl}/stores/{$storeId}/payment-requests/{$paymentRequestId}/pay", [
+                'metadata' => [
+                    'tontine_id' => $tontineId,
+                    'user_id' => $userId,
+                    'paymentRequestId' => $paymentRequestId,
+                    'amount_sats' => $amountSats,
+                ]
             ]);
 
-            $data = json_decode($response->getBody(), true);
-            return [
-                'id' => $data['id'],
-                'bolt11' => $data['checkout']['paymentMethods'][0]['destination'] ?? null,
-                'checkoutLink' => $data['checkoutLink'],
-                'payment_hash' => $data['paymentHash'] ?? null,
-            ];
+            if ($confirmResponse->successful() && isset($confirmResponse['checkoutLink'])) {
+                $data = $confirmResponse->json();
+                $bolt11 = $data['bolt11'] ?? 'ln_invoice';
+
+                if ($bolt11 === 'ln_invoice') {
+                    Log::warning('bolt11 manquant dans la réponse BTCPay, utilisant la valeur par défaut', [
+                        'paymentRequestId' => $paymentRequestId,
+                        'response' => $data,
+                    ]);
+                }
+
+                if (isset($data['amount'])) {
+                    $returnedAmountBtc = (float) $data['amount'];
+                    $returnedAmountSats = intval($returnedAmountBtc * 100_000_000);
+                    if ($returnedAmountSats !== $amountSats) {
+                        Log::error('Incohérence dans le montant de la facture BTCPay', [
+                            'expected_sats' => $amountSats,
+                            'returned_sats' => $returnedAmountSats,
+                        ]);
+                        return [];
+                    }
+                }
+
+                return [
+                    'id' => $paymentRequestId,
+                    'checkoutLink' => $data['checkoutLink'],
+                    'bolt11' => $bolt11,
+                    'payment_hash' => $data['paymentHash'] ?? null,
+                ];
+            } else {
+                Log::error('Échec de la confirmation de la demande de paiement BTCPay', ['response' => $confirmResponse->json()]);
+                return [];
+            }
         } catch (\Exception $e) {
-            Log::error('BTCPay invoice creation failed: ' . $e->getMessage());
+            Log::error('Échec de la création de la facture BTCPay : ' . $e->getMessage());
             return [];
         }
     }
+
 
 
     protected function getCurrentBtcRate(): float

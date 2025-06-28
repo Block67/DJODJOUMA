@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class TontinePayment extends Model
 {
+    // 👇
+    protected $table = 'tontines_payments';
+
     protected $fillable = [
         'tontine_id',
         'user_id',
