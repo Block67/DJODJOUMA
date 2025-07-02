@@ -66,90 +66,20 @@ class DjodjoumaBotService
         }
 
         $keyboard = [
-            [
-                ['text' => '➕ Créer une tontine', 'callback_data' => 'create_tontine'],
-                ['text' => '🤝 Rejoindre une tontine', 'callback_data' => 'join_tontine'],
-            ],
-            [
-                ['text' => '💸 Payer', 'callback_data' => 'pay'],
-                ['text' => '💰 Vérifier le solde', 'callback_data' => 'balance'],
-            ],
-            [
-                ['text' => '🏧 Retirer', 'callback_data' => 'withdraw'],
-            ],
+            ['➕ Créer une tontine', '🤝 Rejoindre une tontine'],
+            ['💸 Payer', '💰 Vérifier le solde'],
+            ['🏧 Retirer'],
         ];
 
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => "Bienvenue, @{$user->username} ! Que souhaitez-vous faire ?",
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => true,
+            ]),
         ]);
-    }
-
-    public function handleCallback(int $chatId, int $userId, string $callbackData, ?int $messageId = null): void
-    {
-        $user = User::where('telegram_id', $userId)->first();
-        if (!$user) {
-            $this->telegram->sendMessage([
-                'chat_id' => $chatId,
-                'text' => 'Utilisateur non enregistré. Veuillez utiliser /start.',
-            ]);
-            return;
-        }
-
-        switch ($callbackData) {
-            case 'create_tontine':
-                Conversation::updateOrCreate(
-                    ['user_id' => $user->id],
-                    ['state' => 'create_tontine_name', 'data' => []]
-                );
-                $this->telegram->sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => 'Entrez le nom de la tontine :',
-                ]);
-                break;
-
-            case 'join_tontine':
-                $this->showJoinTontineOptions($chatId, $user);
-                break;
-
-            case 'pay':
-                $this->selectTontineForPayment($chatId, $user);
-                break;
-
-            case 'balance':
-                $this->selectTontineForBalance($chatId, $user);
-                break;
-
-            case 'withdraw':
-                $this->selectTontineForWithdrawal($chatId, $user);
-                break;
-
-            default:
-                if (str_starts_with($callbackData, 'frequency_')) {
-                    $this->handleFrequencySelection($chatId, $user, $callbackData);
-                } elseif (str_starts_with($callbackData, 'select_tontine_pay_')) {
-                    $tontineId = str_replace('select_tontine_pay_', '', $callbackData);
-                    $this->payTontine($chatId, $user, $tontineId);
-                } elseif (str_starts_with($callbackData, 'select_tontine_balance_')) {
-                    $tontineId = str_replace('select_tontine_balance_', '', $callbackData);
-                    $this->checkBalance($chatId, $user, $tontineId);
-                } elseif (str_starts_with($callbackData, 'select_tontine_withdraw_')) {
-                    $tontineId = str_replace('select_tontine_withdraw_', '', $callbackData);
-                    $this->withdrawTontine($chatId, $user, $tontineId);
-                } elseif (str_starts_with($callbackData, 'join_tontine_code_')) {
-                    $code = str_replace('join_tontine_code_', '', $callbackData);
-                    $this->joinTontine($chatId, $user, $code);
-                }
-        }
-
-        if ($messageId) {
-            $this->telegram->editMessageReplyMarkup([
-                'chat_id' => $chatId,
-                'message_id' => $messageId,
-                'reply_markup' => json_encode(['inline_keyboard' => []]),
-            ]);
-        }
     }
 
     public function handleTextInput(int $chatId, int $userId, string $text): void
@@ -164,8 +94,41 @@ class DjodjoumaBotService
         }
 
         $conversation = Conversation::where('user_id', $user->id)->first();
+
         if (!$conversation) {
-            $this->showMainMenu($chatId, $userId);
+            switch ($text) {
+                case '➕ Créer une tontine':
+                    Conversation::updateOrCreate(
+                        ['user_id' => $user->id],
+                        ['state' => 'create_tontine_name', 'data' => []]
+                    );
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Entrez le nom de la tontine :',
+                        'reply_markup' => json_encode(['remove_keyboard' => true]),
+                    ]);
+                    break;
+
+                case '🤝 Rejoindre une tontine':
+                    $this->showJoinTontineOptions($chatId, $user);
+                    break;
+
+                case '💸 Payer':
+                    $this->selectTontineForPayment($chatId, $user);
+                    break;
+
+                case '💰 Vérifier le solde':
+                    $this->selectTontineForBalance($chatId, $user);
+                    break;
+
+                case '🏧 Retirer':
+                    $this->selectTontineForWithdrawal($chatId, $user);
+                    break;
+
+                default:
+                    $this->showMainMenu($chatId, $userId);
+                    break;
+            }
             return;
         }
 
@@ -198,16 +161,36 @@ class DjodjoumaBotService
                     'data' => $data,
                 ]);
                 $keyboard = [
-                    [
-                        ['text' => 'Quotidien', 'callback_data' => 'frequency_daily'],
-                        ['text' => 'Hebdomadaire', 'callback_data' => 'frequency_weekly'],
-                        ['text' => 'Mensuel', 'callback_data' => 'frequency_monthly'],
-                    ],
+                    ['Quotidien', 'Hebdomadaire', 'Mensuel'],
                 ];
                 $this->telegram->sendMessage([
                     'chat_id' => $chatId,
                     'text' => 'Choisissez la fréquence :',
-                    'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+                    'reply_markup' => json_encode([
+                        'keyboard' => $keyboard,
+                        'resize_keyboard' => true,
+                        'one_time_keyboard' => true,
+                    ]),
+                ]);
+                break;
+
+            case 'create_tontine_frequency':
+                if (!in_array($text, ['Quotidien', 'Hebdomadaire', 'Mensuel'])) {
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Veuillez sélectionner une fréquence valide.',
+                    ]);
+                    return;
+                }
+                $data['frequency'] = strtolower(str_replace(['Quotidien', 'Hebdomadaire', 'Mensuel'], ['daily', 'weekly', 'monthly'], $text));
+                $conversation->update([
+                    'state' => 'create_tontine_max_members',
+                    'data' => $data,
+                ]);
+                $this->telegram->sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => 'Entrez le nombre maximum de membres :',
+                    'reply_markup' => json_encode(['remove_keyboard' => true]),
                 ]);
                 break;
 
@@ -228,27 +211,49 @@ class DjodjoumaBotService
                 $this->joinTontine($chatId, $user, $text);
                 $conversation->delete();
                 break;
+
+            case 'select_tontine_payment':
+                $tontine = Tontine::where('name', $text)->where('status', 'active')->first();
+                if (!$tontine || !$user->tontines()->where('tontine_id', $tontine->id)->exists()) {
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Tontine invalide ou vous n\'êtes pas membre.',
+                        'reply_markup' => json_encode(['remove_keyboard' => true]),
+                    ]);
+                    return;
+                }
+                $conversation->delete();
+                $this->payTontine($chatId, $user, $tontine->id);
+                break;
+
+            case 'select_tontine_balance':
+                $tontine = Tontine::where('name', $text)->where('status', 'active')->first();
+                if (!$tontine || !$user->tontines()->where('tontine_id', $tontine->id)->exists()) {
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Tontine invalide ou vous n\'êtes pas membre.',
+                        'reply_markup' => json_encode(['remove_keyboard' => true]),
+                    ]);
+                    return;
+                }
+                $conversation->delete();
+                $this->checkBalance($chatId, $user, $tontine->id);
+                break;
+
+            case 'select_tontine_withdraw':
+                $tontine = Tontine::where('name', $text)->where('status', 'active')->first();
+                if (!$tontine || !$user->tontines()->where('tontine_id', $tontine->id)->exists()) {
+                    $this->telegram->sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Tontine invalide ou vous n\'êtes pas membre.',
+                        'reply_markup' => json_encode(['remove_keyboard' => true]),
+                    ]);
+                    return;
+                }
+                $conversation->delete();
+                $this->withdrawTontine($chatId, $user, $tontine->id);
+                break;
         }
-    }
-
-    public function handleFrequencySelection(int $chatId, User $user, string $frequency): void
-    {
-        $conversation = Conversation::where('user_id', $user->id)->first();
-        if (!$conversation || $conversation->state !== 'create_tontine_frequency') {
-            return;
-        }
-
-        $data = $conversation->data;
-        $data['frequency'] = str_replace('frequency_', '', $frequency);
-        $conversation->update([
-            'state' => 'create_tontine_max_members',
-            'data' => $data,
-        ]);
-
-        $this->telegram->sendMessage([
-            'chat_id' => $chatId,
-            'text' => 'Entrez le nombre maximum de membres :',
-        ]);
     }
 
     protected function createTontine(int $chatId, User $user, array $data): void
@@ -286,7 +291,7 @@ class DjodjoumaBotService
     protected function showJoinTontineOptions(int $chatId, User $user): void
     {
         $keyboard = [
-            [['text' => 'Entrer le code', 'callback_data' => 'join_tontine_code']],
+            ['Entrer le code'],
         ];
 
         Conversation::updateOrCreate(
@@ -297,7 +302,11 @@ class DjodjoumaBotService
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => 'Entrez le code d\'invitation de la tontine :',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_id' => true,
+                'one_time_keyboard' => true,
+            ]),
         ]);
     }
 
@@ -309,6 +318,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Code d\'invitation invalide.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -317,6 +327,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'La tontine est complète.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -325,6 +336,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous êtes déjà membre de cette tontine.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -351,6 +363,7 @@ class DjodjoumaBotService
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => "Vous avez rejoint la tontine '{$tontine->name}' ! Position : $position",
+            'reply_markup' => json_encode(['remove_keyboard' => true]),
         ]);
 
         $this->showMainMenu($chatId, $user->telegram_id);
@@ -364,18 +377,28 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous n\'êtes membre d\'aucune tontine active.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
 
         $keyboard = $tontines->map(function ($tontine) {
-            return [['text' => $tontine->name, 'callback_data' => 'select_tontine_pay_' . $tontine->id]];
+            return [$tontine->name];
         })->toArray();
+
+        Conversation::updateOrCreate(
+            ['user_id' => $user->id],
+            ['state' => 'select_tontine_payment', 'data' => []]
+        );
 
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => 'Sélectionnez une tontine pour effectuer un paiement :',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => true,
+            ]),
         ]);
     }
 
@@ -386,6 +409,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Tontine invalide ou inactive.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -400,6 +424,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous avez déjà une facture en attente pour ce tour.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -410,6 +435,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Erreur lors de la création de la facture. Veuillez réessayer.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -424,7 +450,7 @@ class DjodjoumaBotService
             'amount_fcfa' => $tontine->amount_fcfa,
             'amount_sats' => $tontine->amount_sats,
             'bolt11_invoice' => $bolt11,
-            'expires_at' => Carbon::now()->addMinutes(30),
+            'expires_at' => Carbon::now()->addMinutes(5),
             'round' => $tontine->current_round,
         ]);
 
@@ -432,6 +458,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => "Veuillez utiliser le lien de paiement : {$invoice['checkoutLink']}",
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
         } else {
             $qrCode = QrCode::size(200)->generate($bolt11);
@@ -453,18 +480,28 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous n\'êtes membre d\'aucune tontine active.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
 
         $keyboard = $tontines->map(function ($tontine) {
-            return [['text' => $tontine->name, 'callback_data' => 'select_tontine_balance_' . $tontine->id]];
+            return [$tontine->name];
         })->toArray();
+
+        Conversation::updateOrCreate(
+            ['user_id' => $user->id],
+            ['state' => 'select_tontine_balance', 'data' => []]
+        );
 
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => 'Sélectionnez une tontine pour vérifier le solde :',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => true,
+            ]),
         ]);
     }
 
@@ -475,6 +512,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Tontine invalide.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -489,6 +527,7 @@ class DjodjoumaBotService
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => "Tontine : {$tontine->name}\nSolde : $totalFcfa FCFA ($totalSats sats)\nProchain bénéficiaire : @$nextBeneficiary\nTour actuel : {$tontine->current_round}",
+            'reply_markup' => json_encode(['remove_keyboard' => true]),
         ]);
 
         $this->showMainMenu($chatId, $user->telegram_id);
@@ -502,18 +541,28 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous n\'êtes membre d\'aucune tontine active.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
 
         $keyboard = $tontines->map(function ($tontine) {
-            return [['text' => $tontine->name, 'callback_data' => 'select_tontine_withdraw_' . $tontine->id]];
+            return [$tontine->name];
         })->toArray();
+
+        Conversation::updateOrCreate(
+            ['user_id' => $user->id],
+            ['state' => 'select_tontine_withdraw', 'data' => []]
+        );
 
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => 'Sélectionnez une tontine pour effectuer un retrait :',
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => true,
+            ]),
         ]);
     }
 
@@ -524,6 +573,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Tontine invalide ou inactive.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -533,6 +583,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous n\'êtes pas membre de cette tontine.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -542,6 +593,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Ce n\'est pas votre tour de retirer.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -550,6 +602,7 @@ class DjodjoumaBotService
             $this->telegram->sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Vous avez déjà reçu votre part.',
+                'reply_markup' => json_encode(['remove_keyboard' => true]),
             ]);
             return;
         }
@@ -583,11 +636,11 @@ class DjodjoumaBotService
         $this->telegram->sendMessage([
             'chat_id' => $chatId,
             'text' => "Retrait initié : $withdrawalAmountFcfa FCFA ($withdrawalAmountSats sats).\nFacture : {$invoice['checkoutLink']}",
+            'reply_markup' => json_encode(['remove_keyboard' => true]),
         ]);
 
         $this->showMainMenu($chatId, $user->telegram_id);
     }
-
 
     protected function createBtcpayInvoice(int $amountSats, int $tontineId, int $userId): array
     {
@@ -684,8 +737,6 @@ class DjodjoumaBotService
         }
     }
 
-
-
     protected function getCurrentBtcRate(): float
     {
         $response = Http::get('https://api.yadio.io/rate/XOF/BTC');
@@ -715,7 +766,6 @@ class DjodjoumaBotService
         return intval(round($fcfa));
     }
 
-
     protected function calculateNextDistribution(Carbon $currentDate, string $frequency): Carbon
     {
         return match ($frequency) {
@@ -724,18 +774,6 @@ class DjodjoumaBotService
             'monthly' => $currentDate->addMonth(),
         };
     }
-
-    public function answerCallbackQuery(string $callbackQueryId): void
-    {
-        try {
-            $this->telegram->answerCallbackQuery([
-                'callback_query_id' => $callbackQueryId,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to answer callback query: ' . $e->getMessage());
-        }
-    }
-
 
     public function handleBtcpayWebhook(Request $request)
     {
@@ -787,6 +825,7 @@ class DjodjoumaBotService
         $this->telegram->sendMessage([
             'chat_id' => $payment->user->telegram_id,
             'text' => "✅ Paiement confirmé de {$payment->amount_fcfa} FCFA pour la tontine '{$payment->tontine->name}'.",
+            'reply_markup' => json_encode(['remove_keyboard' => true]),
         ]);
 
         $creator = User::find($payment->tontine->creator_id);
