@@ -340,7 +340,6 @@ class DjodjoumaBotService
 
         $tontine->increment('current_members');
 
-        // Notifier le créateur de la tontine
         $creator = User::find($tontine->creator_id);
         if ($creator && $creator->telegram_id !== $user->telegram_id) {
             $this->telegram->sendMessage([
@@ -780,19 +779,16 @@ class DjodjoumaBotService
             return response()->json(['error' => 'Paiement non trouvé'], 404);
         }
 
-        // Traitement du paiement
         $payment->update([
             'status' => 'paid',
             'paid_at' => Carbon::now(),
         ]);
 
-        // Notifier l’utilisateur
         $this->telegram->sendMessage([
             'chat_id' => $payment->user->telegram_id,
             'text' => "✅ Paiement confirmé de {$payment->amount_fcfa} FCFA pour la tontine '{$payment->tontine->name}'.",
         ]);
 
-        // Notifier le créateur
         $creator = User::find($payment->tontine->creator_id);
         if ($creator && $creator->telegram_id !== $payment->user->telegram_id) {
             $this->telegram->sendMessage([

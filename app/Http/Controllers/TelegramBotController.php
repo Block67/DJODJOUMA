@@ -20,24 +20,20 @@ class TelegramBotController extends Controller
         try {
             $data = $request->all();
 
-            // Handle messages
             if (isset($data['message'])) {
                 $chatId = $data['message']['chat']['id'];
                 $userId = $data['message']['from']['id'];
                 $text = $data['message']['text'] ?? '';
                 $chatData = $data['message']['from'] ?? null;
 
-                // Start command (no referral codes)
                 if ($text === '/start') {
                     $this->botService->showMainMenu($chatId, $userId, $chatData);
                     return response()->json(['status' => 'success']);
                 }
 
-                // Other text inputs
                 $this->botService->handleTextInput($chatId, $userId, $text);
             }
 
-            // Handle callback queries
             if (isset($data['callback_query'])) {
                 $callbackQuery = $data['callback_query'];
                 $chatId = $callbackQuery['message']['chat']['id'];

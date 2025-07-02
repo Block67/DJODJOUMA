@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('payment_hash')->nullable();
             $table->decimal('amount_fcfa', 15, 2);
             $table->bigInteger('amount_sats');
-            $table->text('bolt11_invoice');
+            $table->text('bolt11_invoice')->nullable();
             $table->enum('status', ['pending', 'paid', 'expired'])->default('pending');
             $table->timestamp('expires_at');
             $table->timestamp('paid_at')->nullable();
