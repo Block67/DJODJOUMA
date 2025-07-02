@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Services\DjodjoumaBotService;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TelegramBotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,8 +20,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// 1. Configurer le webhook - routes/api.php
 Route::post('/telegram/webhook', [App\Http\Controllers\TelegramBotController::class, 'handle']);
 Route::post('/btcpay', [App\Http\Controllers\TelegramBotController::class, 'handleBtcpay']);
 Route::get('/telegram/set-webhook', [App\Http\Controllers\TelegramBotController::class, 'setWebhook']);
 
+Route::post('/webhooks/btcpay', function (Request $request, DjodjoumaBotService $botService) {
+    return $botService->handleBtcpayWebhook($request);
+});

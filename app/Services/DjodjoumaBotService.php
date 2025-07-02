@@ -13,6 +13,7 @@ use App\Models\TontineMember;
 use App\Models\TontinePayment;
 use App\Models\TontineWithdrawal;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -736,39 +737,71 @@ class DjodjoumaBotService
         }
     }
 
-    public function handleBtcpayWebhook(string $invoiceId, string $status): void
+
+    public function handleBtcpayWebhook(Request $request)
     {
+        $rawBody = $request->getContent();
+        Log::info('[BTCPAY] Webhook reçu', ['rawBody' => $rawBody]);
+
+        $signatureHeader = $request->header('BTCPay-Sig');
+        if (!$signatureHeader || !str_starts_with($signatureHeader, 'sha256=')) {
+            Log::error('[BTCPAY] Signature manquante ou invalide');
+            return response()->json(['error' => 'Signature invalide'], 400);
+        }
+
+        $providedSignature = substr($signatureHeader, 7);
+        $computedSignature = hash_hmac('sha256', $rawBody, config('tontine.btcpay.webhook_secret'));
+
+        if (!hash_equals($computedSignature, $providedSignature)) {
+            Log::error('[BTCPAY] Signature incorrecte', [
+                'attendue' => $computedSignature,
+                'reçue' => $providedSignature,
+            ]);
+            return response()->json(['error' => 'Signature incorrecte'], 400);
+        }
+
+        $payload = json_decode($rawBody, true);
+        Log::info('[BTCPAY] Payload décodé', $payload);
+
+        if (!isset($payload['type']) || $payload['type'] !== 'InvoicePaymentSettled') {
+            Log::warning('[BTCPAY] Type d\'événement non traité', ['type' => $payload['type'] ?? 'inconnu']);
+            return response()->json(['ignored' => true], 200);
+        }
+
+        $invoiceId = $payload['invoiceId'] ?? null;
+        if (!$invoiceId) {
+            Log::error('[BTCPAY] invoiceId manquant dans le payload');
+            return response()->json(['error' => 'invoiceId manquant'], 400);
+        }
+
         $payment = TontinePayment::where('invoice_id', $invoiceId)->first();
-
         if (!$payment) {
-            Log::warning('BTCPay webhook: Payment not found for invoice ' . $invoiceId);
-            return;
+            Log::warning('BTCPay webhook: Paiement introuvable pour l\'invoice ' . $invoiceId);
+            return response()->json(['error' => 'Paiement non trouvé'], 404);
         }
 
-        if ($status === 'Settled') {
-            $payment->update([
-                'status' => 'paid',
-                'paid_at' => Carbon::now(),
-            ]);
+        // Traitement du paiement
+        $payment->update([
+            'status' => 'paid',
+            'paid_at' => Carbon::now(),
+        ]);
 
-            // Notifier le membre qui a payé
+        // Notifier l’utilisateur
+        $this->telegram->sendMessage([
+            'chat_id' => $payment->user->telegram_id,
+            'text' => "✅ Paiement confirmé de {$payment->amount_fcfa} FCFA pour la tontine '{$payment->tontine->name}'.",
+        ]);
+
+        // Notifier le créateur
+        $creator = User::find($payment->tontine->creator_id);
+        if ($creator && $creator->telegram_id !== $payment->user->telegram_id) {
             $this->telegram->sendMessage([
-                'chat_id' => $payment->user->telegram_id,
-                'text' => "Paiement de {$payment->amount_fcfa} FCFA confirmé pour la tontine '{$payment->tontine->name}'.",
+                'chat_id' => $creator->telegram_id,
+                'text' => "💰 Le membre @{$payment->user->username} a payé {$payment->amount_fcfa} FCFA pour la tontine '{$payment->tontine->name}' (Tour {$payment->round}).",
             ]);
-
-            // Notifier le créateur de la tontine
-            $tontine = $payment->tontine;
-            $creator = User::find($tontine->creator_id);
-            if ($creator && $creator->telegram_id !== $payment->user->telegram_id) {
-                $this->telegram->sendMessage([
-                    'chat_id' => $creator->telegram_id,
-                    'text' => "Le membre @{$payment->user->username} a payé {$payment->amount_fcfa} FCFA pour la tontine '{$tontine->name}' (Tour {$payment->round}).",
-                ]);
-            }
-        } elseif ($status === 'Expired') {
-            $payment->update(['status' => 'expired']);
         }
+
+        return response()->json(['success' => true]);
     }
 
     protected function registerUser(int $chatId, array $chatData): void
