@@ -775,6 +775,7 @@ class DjodjoumaBotService
         };
     }
 
+
     public function handleBtcpayWebhook(Request $request)
     {
         $rawBody = $request->getContent();
@@ -800,34 +801,40 @@ class DjodjoumaBotService
         $payload = json_decode($rawBody, true);
         Log::info('[BTCPAY] Payload décodé', $payload);
 
-        if (!isset($payload['type']) || $payload['type'] !== 'InvoicePaymentSettled') {
+        // Vérification du type d’événement
+        if (!isset($payload['type']) || $payload['type'] !== 'InvoiceSettled') {
             Log::warning('[BTCPAY] Type d\'événement non traité', ['type' => $payload['type'] ?? 'inconnu']);
             return response()->json(['ignored' => true], 200);
         }
 
-        $invoiceId = $payload['invoiceId'] ?? null;
-        if (!$invoiceId) {
-            Log::error('[BTCPAY] invoiceId manquant dans le payload');
-            return response()->json(['error' => 'invoiceId manquant'], 400);
+        // Récupération du paymentRequestId depuis les metadata
+        $paymentRequestId = $payload['metadata']['paymentRequestId'] ?? null;
+        if (!$paymentRequestId) {
+            Log::error('[BTCPAY] paymentRequestId manquant dans le payload');
+            return response()->json(['error' => 'paymentRequestId manquant'], 400);
         }
 
-        $payment = TontinePayment::where('invoice_id', $invoiceId)->first();
+        // Rechercher le paiement dans la base de données
+        $payment = TontinePayment::where('invoice_id', $paymentRequestId)->first();
         if (!$payment) {
-            Log::warning('BTCPay webhook: Paiement introuvable pour l\'invoice ' . $invoiceId);
+            Log::warning('BTCPay webhook: Paiement introuvable pour le paymentRequestId ' . $paymentRequestId);
             return response()->json(['error' => 'Paiement non trouvé'], 404);
         }
 
+        // Mettre à jour le statut du paiement
         $payment->update([
             'status' => 'paid',
             'paid_at' => Carbon::now(),
         ]);
 
+        // Notifier l’utilisateur via Telegram
         $this->telegram->sendMessage([
             'chat_id' => $payment->user->telegram_id,
             'text' => "✅ Paiement confirmé de {$payment->amount_fcfa} FCFA pour la tontine '{$payment->tontine->name}'.",
             'reply_markup' => json_encode(['remove_keyboard' => true]),
         ]);
 
+        // Notifier le créateur si ce n’est pas la même personne
         $creator = User::find($payment->tontine->creator_id);
         if ($creator && $creator->telegram_id !== $payment->user->telegram_id) {
             $this->telegram->sendMessage([
@@ -838,6 +845,8 @@ class DjodjoumaBotService
 
         return response()->json(['success' => true]);
     }
+
+
 
     protected function registerUser(int $chatId, array $chatData): void
     {

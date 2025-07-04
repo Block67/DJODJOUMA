@@ -1,5 +1,55 @@
-[2025-07-02 09:46:00] production.INFO: Telegram webhook set successfully: https://f1ce-154-66-132-192.ngrok-free.app/api/telegram/webhook  
-[2025-07-02 09:46:15] production.ERROR: Telegram webhook error: cURL error 28: Connection timed out after 10001 milliseconds (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.telegram.org/bot7700295520:AAFc4jXaJNrfPvP8xVoEZCh25mBUkTqusrc/sendMessage  
-[2025-07-02 09:46:20] production.INFO: Telegram webhook set successfully: https://f1ce-154-66-132-192.ngrok-free.app/api/telegram/webhook  
-[2025-07-02 09:47:02] production.ERROR: Telegram webhook error: cURL error 28: Connection timed out after 10001 milliseconds (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.telegram.org/bot7700295520:AAFc4jXaJNrfPvP8xVoEZCh25mBUkTqusrc/sendMessage  
-[2025-07-02 09:47:19] production.WARNING: bolt11 manquant dans la réponse BTCPay, utilisant la valeur par défaut {"paymentRequestId":"2db45334-f8f5-4a30-b64d-58eb723f2190","response":{"id":"CwkLpgE7DRCq47akwsmfWM","storeId":"GwuePFnavf3kL5ARnLbzuxeLFJpPvC8Pgbtx8S1qAg2z","amount":"0.00000002","checkoutLink":"https://pay.withbitcoin.org/i/CwkLpgE7DRCq47akwsmfWM","status":"New","additionalStatus":"None","monitoringExpiration":1751536337,"expirationTime":1751449937,"createdTime":1751449637,"availableStatusesForManualMarking":["Settled","Invalid"],"archived":false,"type":"Standard","currency":"BTC","metadata":{"orderId":"PAY_REQUEST_2db45334-f8f5-4a30-b64d-58eb723f2190","paymentRequestId":"2db45334-f8f5-4a30-b64d-58eb723f2190","buyerEmail":"user_1@example.com"},"checkout":{"speedPolicy":"MediumSpeed","paymentMethods":["BTC-LN","BTC-LNURL"],"defaultPaymentMethod":null,"expirationMinutes":5,"monitoringMinutes":1440,"paymentTolerance":0.0,"redirectURL":"https://pay.withbitcoin.org/payment-requests/2db45334-f8f5-4a30-b64d-58eb723f2190","redirectAutomatically":false,"defaultLanguage":null,"lazyPaymentMethods":null},"receipt":{"enabled":false,"showQR":true,"showPayments":true}}} 
+[2025-07-04 07:12:09] production.INFO: [BTCPAY] Webhook reçu {"rawBody":"{
+  \"deliveryId\": \"EQVygitJtS3haqG2LtXhZZ\",
+  \"webhookId\": \"RX3UBCuGzce4NbGdm7fnRA\",
+  \"originalDeliveryId\": \"EL6br2V1iYYBEemMxQZc25\",
+  \"isRedelivery\": true,
+  \"type\": \"InvoiceSettled\",
+  \"timestamp\": 1751612616,
+  \"manuallyMarked\": false,
+  \"overPaid\": false,
+  \"storeId\": \"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy\",
+  \"invoiceId\": \"Xe4gcjH8cbxQ54Sc2KA8w5\",
+  \"metadata\": {
+    \"orderId\": \"PAY_REQUEST_956a1749-4178-48eb-908e-09eac44a5427\",
+    \"buyerEmail\": \"user_1@example.com\",
+    \"paymentRequestId\": \"956a1749-4178-48eb-908e-09eac44a5427\"
+  }
+}"} 
+[2025-07-04 07:12:09] production.INFO: [BTCPAY] Payload décodé {"deliveryId":"EQVygitJtS3haqG2LtXhZZ","webhookId":"RX3UBCuGzce4NbGdm7fnRA","originalDeliveryId":"EL6br2V1iYYBEemMxQZc25","isRedelivery":true,"type":"InvoiceSettled","timestamp":1751612616,"manuallyMarked":false,"overPaid":false,"storeId":"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy","invoiceId":"Xe4gcjH8cbxQ54Sc2KA8w5","metadata":{"orderId":"PAY_REQUEST_956a1749-4178-48eb-908e-09eac44a5427","buyerEmail":"user_1@example.com","paymentRequestId":"956a1749-4178-48eb-908e-09eac44a5427"}} 
+[2025-07-04 07:12:54] production.INFO: [BTCPAY] Webhook reçu {"rawBody":"{
+  \"deliveryId\": \"JnZxSJwfYHxcBZkxqRLkFa\",
+  \"webhookId\": \"RX3UBCuGzce4NbGdm7fnRA\",
+  \"originalDeliveryId\": \"EL6br2V1iYYBEemMxQZc25\",
+  \"isRedelivery\": true,
+  \"type\": \"InvoiceSettled\",
+  \"timestamp\": 1751612616,
+  \"manuallyMarked\": false,
+  \"overPaid\": false,
+  \"storeId\": \"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy\",
+  \"invoiceId\": \"Xe4gcjH8cbxQ54Sc2KA8w5\",
+  \"metadata\": {
+    \"orderId\": \"PAY_REQUEST_956a1749-4178-48eb-908e-09eac44a5427\",
+    \"buyerEmail\": \"user_1@example.com\",
+    \"paymentRequestId\": \"956a1749-4178-48eb-908e-09eac44a5427\"
+  }
+}"} 
+[2025-07-04 07:12:54] production.INFO: [BTCPAY] Payload décodé {"deliveryId":"JnZxSJwfYHxcBZkxqRLkFa","webhookId":"RX3UBCuGzce4NbGdm7fnRA","originalDeliveryId":"EL6br2V1iYYBEemMxQZc25","isRedelivery":true,"type":"InvoiceSettled","timestamp":1751612616,"manuallyMarked":false,"overPaid":false,"storeId":"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy","invoiceId":"Xe4gcjH8cbxQ54Sc2KA8w5","metadata":{"orderId":"PAY_REQUEST_956a1749-4178-48eb-908e-09eac44a5427","buyerEmail":"user_1@example.com","paymentRequestId":"956a1749-4178-48eb-908e-09eac44a5427"}} 
+[2025-07-04 07:13:42] production.WARNING: bolt11 manquant dans la réponse BTCPay, utilisant la valeur par défaut {"paymentRequestId":"00eab3d0-d374-4feb-88da-88b0cb80dee1","response":{"id":"8T8nG26cZigGictcb6Arb8","storeId":"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy","amount":"0.00000002","checkoutLink":"https://pay.withbitcoin.org/i/8T8nG26cZigGictcb6Arb8","status":"New","additionalStatus":"None","monitoringExpiration":1751699801,"expirationTime":1751613401,"createdTime":1751613221,"availableStatusesForManualMarking":["Settled","Invalid"],"archived":false,"type":"Standard","currency":"BTC","metadata":{"orderId":"PAY_REQUEST_00eab3d0-d374-4feb-88da-88b0cb80dee1","paymentRequestId":"00eab3d0-d374-4feb-88da-88b0cb80dee1","buyerEmail":"user_1@example.com"},"checkout":{"speedPolicy":"MediumSpeed","paymentMethods":["BTC-LN","BTC-LNURL"],"defaultPaymentMethod":null,"expirationMinutes":3,"monitoringMinutes":1440,"paymentTolerance":0.0,"redirectURL":"https://pay.withbitcoin.org/payment-requests/00eab3d0-d374-4feb-88da-88b0cb80dee1","redirectAutomatically":false,"defaultLanguage":null,"lazyPaymentMethods":null},"receipt":{"enabled":false,"showQR":true,"showPayments":true}}} 
+[2025-07-04 07:14:00] production.INFO: [BTCPAY] Webhook reçu {"rawBody":"{
+  \"manuallyMarked\": false,
+  \"overPaid\": false,
+  \"deliveryId\": \"7eMRXK2EbRWJ1xn2wBDL2s\",
+  \"webhookId\": \"RX3UBCuGzce4NbGdm7fnRA\",
+  \"originalDeliveryId\": \"7eMRXK2EbRWJ1xn2wBDL2s\",
+  \"isRedelivery\": false,
+  \"type\": \"InvoiceSettled\",
+  \"timestamp\": 1751613239,
+  \"storeId\": \"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy\",
+  \"invoiceId\": \"8T8nG26cZigGictcb6Arb8\",
+  \"metadata\": {
+    \"orderId\": \"PAY_REQUEST_00eab3d0-d374-4feb-88da-88b0cb80dee1\",
+    \"buyerEmail\": \"user_1@example.com\",
+    \"paymentRequestId\": \"00eab3d0-d374-4feb-88da-88b0cb80dee1\"
+  }
+}"} 
+[2025-07-04 07:14:00] production.INFO: [BTCPAY] Payload décodé {"manuallyMarked":false,"overPaid":false,"deliveryId":"7eMRXK2EbRWJ1xn2wBDL2s","webhookId":"RX3UBCuGzce4NbGdm7fnRA","originalDeliveryId":"7eMRXK2EbRWJ1xn2wBDL2s","isRedelivery":false,"type":"InvoiceSettled","timestamp":1751613239,"storeId":"AWvybLskC7tDJqMjF6LjMBoKVaRehoaGypaSg1ysvFHy","invoiceId":"8T8nG26cZigGictcb6Arb8","metadata":{"orderId":"PAY_REQUEST_00eab3d0-d374-4feb-88da-88b0cb80dee1","buyerEmail":"user_1@example.com","paymentRequestId":"00eab3d0-d374-4feb-88da-88b0cb80dee1"}} 
